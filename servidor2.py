@@ -76,10 +76,12 @@ def esc(valor):
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     base_url = str(request.base_url).rstrip("/")
-    # TLS 1.2 forzado: PowerShell 5.1 en equipos viejos no lo usa por defecto y falla con HTTPS
+    # TLS 1.2 forzado: PowerShell 5.1 en equipos viejos no lo usa por defecto y falla con HTTPS.
+    # Envuelto en "powershell -Command" para que funcione pegado tanto en CMD como en PowerShell.
     comando_powershell = esc(
+        'powershell -NoProfile -ExecutionPolicy Bypass -Command "'
         "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; "
-        f"iex (New-Object Net.WebClient).DownloadString('{base_url}/script')"
+        f"iex (New-Object Net.WebClient).DownloadString('{base_url}/script')\""
     )
 
     return f"""
@@ -99,7 +101,7 @@ def home(request: Request):
             <div class="container">
                 <h1>Relevamiento de Equipos</h1>
                 <p>Para escanear este equipo sin usar memorias Flash o pendrives, sigue estos pasos:</p>
-                <p class="pasos">Paso 1: Abre PowerShell <u>como Administrador</u> (necesario para leer estado del disco, TPM y Secure Boot).</p>
+                <p class="pasos">Paso 1: Abre CMD o PowerShell <u>como Administrador</u> (necesario para leer estado del disco, TPM y Secure Boot).</p>
                 <p class="pasos">Paso 2: Copia y pega el siguiente comando exacto y presiona Enter:</p>
                 <code>{comando_powershell}</code>
                 <p style="margin-top:20px; font-size: 12px; color: #718096;">El comando descargará temporalmente el script en memoria, extraerá el hardware y guardará todo en PostgreSQL.</p>
