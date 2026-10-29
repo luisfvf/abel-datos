@@ -40,6 +40,7 @@ deploy:
     - eval $(ssh-agent -s)
     # Asegurar permisos y cargar la llave desde la variable de tipo File
     - chmod 400 "$SSH_PRIVATE_KEY"
+    - ssh-add -l
     - ssh-add "$SSH_PRIVATE_KEY"
     - head -1 "$SSH_PRIVATE_KEY"
     # Preparar el directorio .ssh y aceptar el host (para evitar el prompt interactivo)
