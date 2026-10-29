@@ -40,7 +40,7 @@ deploy:
     # Acepta tanto variable tipo File (ruta) como tipo Variable (contenido)
     - if [ -f "$SSH_PRIVATE_KEY" ]; then cp "$SSH_PRIVATE_KEY" ~/.ssh/id_deploy; else printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy; fi
     - chmod 600 ~/.ssh/id_deploy
-    - echo "Intentando conectar a: $DEPLOY_HOST"
+    - 'echo "Intentando conectar a: $DEPLOY_HOST"'
     - ssh-keyscan -H "$DEPLOY_HOST" || echo "ssh-keyscan falló, pero el job continúa"
     - ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
   script:
