@@ -1,11 +1,11 @@
 # Pipeline para GitLab (git@192.168.43.26:daf-lpz/relevamiento.git)
 #
 # Variables a definir en Settings -> CI/CD -> Variables:
-#   SSH_PRIVATE_KEY  (File o Variable, Protected) clave privada con acceso al servidor
-#   DEPLOY_HOST      IP o nombre del servidor destino (ej. 192.168.43.30)
+#   SSH_PRIVATE_KEY  (tipo File, Protected) clave privada autorizada en el servidor
+#   DEPLOY_HOST      IP del servidor destino (ej. 192.168.43.26)
 #   DEPLOY_USER      usuario SSH del servidor (debe poder usar docker)
 #   DEPLOY_PATH      carpeta destino (opcional, por defecto /opt/relevamiento)
-#   DB_PASSWORD      (Masked, Protected) contraseÃ±a de Postgres
+#   DB_PASSWORD      (Masked, Protected) contraseña de Postgres
 #   APP_PORT         puerto publicado (opcional, por defecto 8000)
 #
 # El servidor destino necesita Docker y el plugin "docker compose".
@@ -36,20 +36,13 @@ deploy:
     url: http://$DEPLOY_HOST:$APP_PORT
   before_script:
     - apk add --no-cache openssh-client tar
-    # Iniciar el agente SSH
-    - eval $(ssh-agent -s)
-    # Asegurar permisos y cargar la llave desde la variable de tipo File
+    # SSH rechaza claves con permisos abiertos
     - chmod 400 "$SSH_PRIVATE_KEY"
-    - ssh-add "$SSH_PRIVATE_KEY"
-    # Huella de la llave cargada: comparar con "ssh-keygen -lf archivo.pub" en tu PC
-    - ssh-add -l
-    # Preparar el directorio .ssh y aceptar el host (para evitar el prompt interactivo)
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-    - echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
   script:
-    - SSH="ssh $DEPLOY_USER@$DEPLOY_HOST"
+    # accept-new: acepta la huella del servidor la primera vez, sin pregunta interactiva
+    - SSH="ssh -i $SSH_PRIVATE_KEY -o StrictHostKeyChecking=accept-new $DEPLOY_USER@$DEPLOY_HOST"
     - $SSH "mkdir -p $DEPLOY_PATH"
+    # Copia solo lo necesario para construir y levantar los contenedores
     - tar czf - Dockerfile .dockerignore docker-compose.yml requirements.txt servidor2.py schema.sql | $SSH "tar xzf - -C $DEPLOY_PATH"
     - printf 'DB_PASSWORD=%s\nAPP_PORT=%s\n' "$DB_PASSWORD" "$APP_PORT" | $SSH "umask 077 && cat > $DEPLOY_PATH/.env"
     - $SSH "cd $DEPLOY_PATH && docker compose up -d --build --remove-orphans && docker image prune -f"
