@@ -36,17 +36,18 @@ deploy:
     url: http://$DEPLOY_HOST:$APP_PORT
   before_script:
     - apk add --no-cache openssh-client tar
-    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    # Acepta tanto variable tipo File (ruta) como tipo Variable (contenido)
-    - if [ -f "$SSH_PRIVATE_KEY" ]; then cp "$SSH_PRIVATE_KEY" ~/.ssh/id_deploy; else printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_deploy; fi
-    - chmod 600 ~/.ssh/id_deploy
-    - 'echo "Intentando conectar a: $DEPLOY_HOST"'
-    - ssh-keyscan -H "$DEPLOY_HOST" || echo "ssh-keyscan falló, pero el job continúa"
-    - ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+    # Iniciar el agente SSH
+    - eval $(ssh-agent -s)
+    # Asegurar permisos y cargar la llave desde la variable de tipo File
+    - chmod 400 "$SSH_PRIVATE_KEY"
+    - ssh-add "$SSH_PRIVATE_KEY"
+    # Preparar el directorio .ssh y aceptar el host (para evitar el prompt interactivo)
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
   script:
-    - SSH="ssh -i ~/.ssh/id_deploy $DEPLOY_USER@$DEPLOY_HOST"
+    - SSH="ssh $DEPLOY_USER@$DEPLOY_HOST"
     - $SSH "mkdir -p $DEPLOY_PATH"
-    # Copia solo lo necesario para construir y levantar los contenedores
     - tar czf - Dockerfile .dockerignore docker-compose.yml requirements.txt servidor2.py schema.sql | $SSH "tar xzf - -C $DEPLOY_PATH"
     - printf 'DB_PASSWORD=%s\nAPP_PORT=%s\n' "$DB_PASSWORD" "$APP_PORT" | $SSH "umask 077 && cat > $DEPLOY_PATH/.env"
     - $SSH "cd $DEPLOY_PATH && docker compose up -d --build --remove-orphans && docker image prune -f"
