@@ -44,8 +44,12 @@ CREATE TABLE IF NOT EXISTS equipos (
     secure_boot character varying(20),
     ip character varying(45),
     mac character varying(20),
-    dominio character varying(100)
+    dominio character varying(100),
+    observacion text
 );
+
+-- Columnas agregadas después de la primera versión (para bases ya creadas)
+ALTER TABLE equipos ADD COLUMN IF NOT EXISTS observacion text;
 
 CREATE OR REPLACE VIEW v_obsolescencia AS
 SELECT id,

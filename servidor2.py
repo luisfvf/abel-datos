@@ -63,7 +63,7 @@ COLUMNAS = [
     "fecha_instalacion_so", "cpu_nucleos", "cpu_hilos", "cpu_mhz",
     "ram_slots_usados", "ram_slots_total", "ram_mhz",
     "disco_salud", "disco_smart", "disco_desgaste_pct", "disco_horas_uso", "disco_libre_gb",
-    "tpm_version", "secure_boot", "ip", "mac", "dominio",
+    "tpm_version", "secure_boot", "ip", "mac", "dominio", "observacion",
 ]
 
 
@@ -313,6 +313,9 @@ if ($TieneImp -match '^[sS]') {
     $CodActImp = Read-Host "Ingrese el CODIGO DE ACTIVO de la impresora"
 }
 
+Write-Host ""
+$Observacion = Read-Host "Ingrese una OBSERVACION (opcional, Enter para omitir)"
+
 $Resultado = [PSCustomObject]@{
     "FECHA"                = (Get-Date -Format "yyyy-MM-dd HH:mm")
     "JUZGADO"              = $JuzgadoInput
@@ -356,6 +359,7 @@ $Resultado = [PSCustomObject]@{
     "IP"                   = $Ip
     "MAC"                  = $Mac
     "DOMINIO"              = $Dominio
+    "OBSERVACION"          = $Observacion
 }
 
 $JsonData = $Resultado | ConvertTo-Json -Compress
@@ -422,6 +426,7 @@ class EquipoData(BaseModel):
     IP: Optional[str] = None
     MAC: Optional[str] = None
     DOMINIO: Optional[str] = None
+    OBSERVACION: Optional[str] = None
 
 
 # La query se arma una sola vez a partir de COLUMNAS (nombres fijos, no vienen del usuario)
@@ -515,6 +520,7 @@ def armar_fila(f):
             <td>{esc(f['cod_act_pc'])}</td>
             <td>{impresora}</td>
             <td>{esc(f['cod_act_imp'])}</td>
+            <td>{esc(f['observacion'])}</td>
         </tr>
     """
 
@@ -570,7 +576,7 @@ def ver_tabla_equipos():
                             <th>Hostname</th><th>Service Tag</th><th>Usuario</th><th>Rol</th>
                             <th>Equipo</th><th>Procesador</th><th>Disco</th><th>RAM</th>
                             <th>Antigüedad</th><th>Sistema Operativo</th><th>Salud Disco</th><th>Win 11</th>
-                            <th>Cód. Activo PC</th><th>Impresora</th><th>Cód. Activo Imp.</th>
+                            <th>Cód. Activo PC</th><th>Impresora</th><th>Cód. Activo Imp.</th><th>Observación</th>
                         </tr>
                     </thead>
                     <tbody>

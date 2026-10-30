@@ -70,7 +70,8 @@ CREATE TABLE public.equipos (
     secure_boot character varying(20),
     ip character varying(45),
     mac character varying(20),
-    dominio character varying(100)
+    dominio character varying(100),
+    observacion text
 );
 
 
